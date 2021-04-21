@@ -1,8 +1,8 @@
 import configparser
 from datetime import datetime
 import os
-# import findspark
-# findspark.init()
+import findspark
+findspark.init()
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col, monotonically_increasing_id
 from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear
@@ -31,12 +31,6 @@ def process_song_data(spark, input_data, output_data, run_start_time):
     Load JSON input data (song_data) from input_data path,
         process the data to extract song_table and artists_table, and
         store the queried data to parquet files.
-
-    Params:
-    -Spark session
-    -input_data to be processed (song_data)
-    -output_data (parquet files)
-    -process time
     """
 
     print("Start processing song_data JSON files...")
@@ -214,14 +208,13 @@ def process_log_data(spark, input_data_ld, input_data_sd, output_data, \
 
     song_data = input_data_sd
     print("Reading song_data files from {}...".format(song_data))
-    df_sd = spark.read.json(song_data).dropDuplicates()
+    df_sd = spark.read.json(song_data)
 
     # Join log_data and song_data DFs
     print("Joining log_data and song_data DFs...")
     df_ld_sd_joined = df_ld_filtered\
         .join(df_sd, (df_ld_filtered.artist == df_sd.artist_name) & \
                      (df_ld_filtered.song == df_sd.title))
-
     print("...finished joining song_data and log_data DFs.")
     print("Joined song_data + log_data schema:")
     df_ld_sd_joined.printSchema()
@@ -278,18 +271,20 @@ def query_songplays_table(  spark, \
                             users_table, \
                             time_table, \
                             songplays_table):
-    """
-    Query example using all the created tables.
+    """Query example using all the created tables.
         Provides example set of songplays and who listened them.
 
-    Params:
-    -spark session
-    -songs_table dataframe
-    -artists_table dataframe
-    -users_table dataframe
-    -time_table dataframe
-    -songplays_table dataframe
+    Keyword arguments:
+    * spark            -- spark session
+    * songs_table      -- songs_table dataframe
+    * artists_table    -- artists_table dataframe
+    * users_table      -- users_table dataframe
+    * time_table       -- time_table dataframe
+    * songplays_table  -- songplays_table dataframe
 
+    Output:
+    * schema           -- schema of the created dataframe
+    * songplays        -- songplays by user (if any)
     """
     df_all_tables_joined = songplays_table.alias('sp')\
         .join(users_table.alias('u'), col('u.user_id') \
@@ -317,17 +312,19 @@ def query_examples( spark, \
                     users_table, \
                     time_table, \
                     songplays_table):
-    """
-    Query example using all the created tables.
+    """Query example using all the created tables.
 
-    Params:
-    -spark session
-    -songs_table dataframe
-    -artists_table dataframe
-    -users_table dataframe
-    -time_table dataframe
-    -songplays_table dataframe
+    Keyword arguments:
+    * spark            -- spark session
+    * songs_table      -- songs_table dataframe
+    * artists_table    -- artists_table dataframe
+    * users_table      -- users_table dataframe
+    * time_table       -- time_table dataframe
+    * songplays_table  -- songplays_table dataframe
 
+    Output:
+    * schema           -- schema of the created dataframe
+    * songplays        -- songplays by user (if any)
     """
     # Query count of rows in the table
     print("Songs_table count: " \
@@ -360,17 +357,17 @@ def main():
             at {}\n".format(start))
 
     spark = create_spark_session()
-    input_data = "s3a://udacity-dend/"
+    # input_data = "s3a://udacity-dend/"
 
     # Variables to be used in when data is processed from/to S3.
-    input_data_sd = config['AWS']['INPUT_DATA_SD']
-    input_data_ld = config['AWS']['INPUT_DATA_LD']
-    output_data = config['AWS']['OUTPUT_DATA']
+    # input_data_sd = config['AWS']['INPUT_DATA_SD']
+    # input_data_ld = config['AWS']['INPUT_DATA_LD']
+    # output_data = config['AWS']['OUTPUT_DATA']
 
     # Use LOCAL input_data + output_data paths.
-#     input_data_sd = config['LOCAL']['INPUT_DATA_SD_LOCAL']
-#     input_data_ld = config['LOCAL']['INPUT_DATA_LD_LOCAL']
-#     output_data   = config['LOCAL']['OUTPUT_DATA_LOCAL']
+    input_data_sd = config['LOCAL']['INPUT_DATA_SD_LOCAL']
+    input_data_ld = config['LOCAL']['INPUT_DATA_LD_LOCAL']
+    output_data   = config['LOCAL']['OUTPUT_DATA_LOCAL']
 
     # Use AWS input_data + output_data paths.
     songs_table, artists_table = process_song_data( spark, \
